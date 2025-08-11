@@ -12,7 +12,7 @@ app = FastAPI()
 clients: Dict[str, WebSocket] = {}
 
 # Master key
-MASTER_KEY = os.getenv("ceea202e79dfd57251356943cb2e999f")
+MASTER_KEY = os.getenv("master_key")
 
 # Slave keys - dynamically read all env vars starting with "slave_"
 SLAVE_AUTH = {k: v for k, v in os.environ.items() if k.startswith("slave_")}
@@ -75,3 +75,4 @@ async def websocket_endpoint(websocket: WebSocket):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
