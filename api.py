@@ -10,7 +10,7 @@ app = FastAPI()
 clients: List[WebSocket] = []
 
 # Load API key from environment variable (set in Render dashboard)
-API_KEY = os.getenv("API_KEY", "changeme")  # "changeme" only as a fallback for local testing
+API_KEY = os.getenv("API_KEY", "ceea202e79dfd57251356943cb2e999f")  # "changeme" only as a fallback for local testing
 
 class Signal(BaseModel):
     action: str  # e.g., "open" or "close"
@@ -64,4 +64,5 @@ import os
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))  # fallback to 8000 locally
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
