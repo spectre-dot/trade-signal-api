@@ -64,16 +64,27 @@ async def websocket_endpoint(websocket: WebSocket, slave_id: str, api_key: str):
     clients[slave_id] = websocket
     print(f"[{slave_id}] ✅ Connected")
 
+    async def keep_alive():
+        try:
+            while True:
+                await websocket.send_text("ping")
+                await asyncio.sleep(20)
+        except Exception:
+            pass  # handled in main loop
+
+    keepalive_task = asyncio.create_task(keep_alive())
+
     try:
         while True:
-            # Keep connection alive with periodic ping
-            await websocket.send_text("ping")  # optional
-            await asyncio.sleep(20)  # 20 sec keepalive
+            msg = await websocket.receive_text()  # read incoming to avoid idle timeout
+            # Optional: handle pongs or other messages
+            # print(f"[{slave_id}] 📥 {msg}")
     except WebSocketDisconnect:
         print(f"[{slave_id}] ❌ Disconnected")
-        clients.pop(slave_id, None)
     except Exception as e:
         print(f"[{slave_id}] ⚠️ Error: {e}")
+    finally:
+        keepalive_task.cancel()
         clients.pop(slave_id, None)
 
 if __name__ == "__main__":
