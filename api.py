@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict
 import uvicorn
+import asyncio
 
 app = FastAPI()
 
@@ -54,25 +55,27 @@ async def send_signal(request: Request, signal: Signal):
     return JSONResponse({"status": "Signal sent", "clients": len(clients)})
 
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    slave_id = websocket.query_params.get("slave_id")
-    api_key = websocket.query_params.get("api_key")
-
-    # Slave_id will match the env var name (e.g., slave_1)
-    if not slave_id or slave_id not in SLAVE_AUTH or SLAVE_AUTH[slave_id] != api_key:
-        await websocket.close(code=1008)
+async def websocket_endpoint(websocket: WebSocket, slave_id: str, api_key: str):
+    if api_key != os.getenv(slave_id):
+        await websocket.close()
         return
 
     await websocket.accept()
     clients[slave_id] = websocket
+    print(f"[{slave_id}] ✅ Connected")
 
     try:
         while True:
-            await websocket.receive_text()
+            # Keep connection alive with periodic ping
+            await websocket.send_text("ping")  # optional
+            await asyncio.sleep(20)  # 20 sec keepalive
     except WebSocketDisconnect:
+        print(f"[{slave_id}] ❌ Disconnected")
+        clients.pop(slave_id, None)
+    except Exception as e:
+        print(f"[{slave_id}] ⚠️ Error: {e}")
         clients.pop(slave_id, None)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
